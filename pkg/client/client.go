@@ -27,6 +27,7 @@ type Client struct {
 
 	routineNum int
 	retries    int
+	tagLimit   int
 	logger     *logrus.Logger
 
 	// mutex
@@ -43,7 +44,7 @@ type URLPair struct {
 }
 
 // NewSyncClient creates a synchronization client
-func NewSyncClient(configFile, authFile, imageFile, logFile string, routineNum, retries int, defaultDestRegistry string, defaultDestNamespace string) (*Client, error) {
+func NewSyncClient(configFile, authFile, imageFile, logFile string, routineNum, retries, tagLimit int, defaultDestRegistry string, defaultDestNamespace string) (*Client, error) {
 	logger := NewFileLogger(logFile)
 
 	config, err := NewSyncConfig(configFile, authFile, imageFile, defaultDestRegistry, defaultDestNamespace)
@@ -59,6 +60,7 @@ func NewSyncClient(configFile, authFile, imageFile, logFile string, routineNum, 
 		config:                     config,
 		routineNum:                 routineNum,
 		retries:                    retries,
+		tagLimit:                   tagLimit,
 		logger:                     logger,
 		taskListChan:               make(chan int, 1),
 		urlPairListChan:            make(chan int, 1),
@@ -240,7 +242,12 @@ func (c *Client) GenerateSyncTask(source string, destination string) ([]*URLPair
 
 		// generate url pairs for tags
 		var urlPairs = []*URLPair{}
-		for _, tag := range tags {
+		for i := len(tags) - 1; i >= 0; i-- {
+			if c.tagLimit > 0 && len(urlPairs) >= c.tagLimit {
+				break
+			}
+
+			tag := tags[i]
 			urlPairs = append(urlPairs, &URLPair{
 				source:      sourceURL.GetURL() + ":" + tag,
 				destination: destURL.GetURL() + ":" + tag,

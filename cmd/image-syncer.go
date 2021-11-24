@@ -11,7 +11,7 @@ import (
 var (
 	logPath, configFile, authFile, imageFile, defaultRegistry, defaultNamespace string
 
-	procNum, retries int
+	procNum, retries, tagLimit int
 )
 
 // RootCmd describes "image-syncer" command
@@ -24,7 +24,7 @@ var RootCmd = &cobra.Command{
 	Complete documentation is available at https://github.com/AliyunContainerService/image-syncer`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// work starts here
-		client, err := client.NewSyncClient(configFile, authFile, imageFile, logPath, procNum, retries, defaultRegistry, defaultNamespace)
+		client, err := client.NewSyncClient(configFile, authFile, imageFile, logPath, procNum, retries, tagLimit,  defaultRegistry, defaultNamespace)
 		if err != nil {
 			return fmt.Errorf("init sync client error: %v", err)
 		}
@@ -46,6 +46,7 @@ func init() {
 		"default destinate namespace when destinate namespace is not given in the config file, can also be set with DEFAULT_NAMESPACE environment value")
 	RootCmd.PersistentFlags().IntVarP(&procNum, "proc", "p", 5, "numbers of working goroutines")
 	RootCmd.PersistentFlags().IntVarP(&retries, "retries", "r", 2, "times to retry failed task")
+	RootCmd.PersistentFlags().IntVarP(&tagLimit, "tagLimit", "t", -1, "expect migrate image`s tag")
 }
 
 // Execute executes the RootCmd
